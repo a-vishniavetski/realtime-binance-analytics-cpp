@@ -8,7 +8,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 
-add_executable(RealTimeBinanceProcessing main.cpp)
+add_executable(RealTimeBinanceProcessing src/main.cpp)
 
 # Link libraries
 target_link_libraries(RealTimeBinanceProcessing
