@@ -3,6 +3,9 @@
 #include <websocketpp/client.hpp>
 #include <iostream>
 #include <thread>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 typedef websocketpp::client<websocketpp::config::asio_tls_client> client;
 
@@ -78,7 +81,8 @@ public:
 
 private:
     void handle_message(const std::string& payload) {
-        std::cout << "BTC Data: " << payload << std::endl;
+        auto data = json::parse(payload);
+        std::cout << "BTC / USDT last price: " << data["c"] << std::endl;
     }
 };
 
