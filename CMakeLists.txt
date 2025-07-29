@@ -8,7 +8,13 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 
-add_executable(RealTimeBinanceProcessing src/main.cpp)
+add_executable(RealTimeBinanceProcessing src/main.cpp
+        src/analysis/Analyzer.cpp
+        src/analysis/Analyzer.h
+        src/analysis/SimpleMovingAverage.cpp
+        src/analysis/SimpleMovingAverage.h
+        src/analysis/ExponentialMovingAverage.cpp
+        src/analysis/ExponentialMovingAverage.h)
 
 # Link libraries
 target_link_libraries(RealTimeBinanceProcessing

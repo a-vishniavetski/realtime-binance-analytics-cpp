@@ -5,6 +5,13 @@
 #include <thread>
 #include <nlohmann/json.hpp>
 
+#include <vector>
+#include <deque>
+#include <numeric>
+#include <cmath>
+#include <algorithm>
+#include "analysis/Analyzer.h"
+
 using json = nlohmann::json;
 
 typedef websocketpp::client<websocketpp::config::asio_tls_client> client;
@@ -35,29 +42,30 @@ public:
             });
 
             m_client.set_open_handler([this](websocketpp::connection_hdl hdl) {
-                std::cout << "Connection opened!" << std::endl;
+                std::cout << "Connection opened!" << '\n';
                 m_hdl = hdl;
             });
 
             m_client.set_fail_handler([this](websocketpp::connection_hdl hdl) {
-                std::cout << "Connection failed!" << std::endl;
+                std::cout << "Connection failed!" << '\n';
             });
 
             m_client.set_close_handler([this](websocketpp::connection_hdl hdl) {
-                std::cout << "Connection closed!" << std::endl;
+                std::cout << "Connection closed!" << '\n';
             });
 
             // Create connection
             websocketpp::lib::error_code ec;
-            auto con = m_client.get_connection("wss://stream.binance.com:9443/ws/btcusdt@ticker", ec);
+            std::string connection_url = "wss://stream.binance.com:9443/ws/btcusdt@trade";
+            auto con = m_client.get_connection("wss://stream.binance.com:9443/ws/btcusdt@trade", ec);
 
             if (ec) {
-                std::cout << "Could not create connection: " << ec.message() << std::endl;
+                std::cout << "Could not create connection: " << ec.message() << '\n';
                 return;
             }
 
             if (!con) {
-                std::cout << "Connection object is null!" << std::endl;
+                std::cout << "Connection object is null!" << '\n';
                 return;
             }
 
@@ -73,21 +81,45 @@ public:
             client_thread.join();
 
         } catch (websocketpp::exception const & e) {
-            std::cout << "WebSocket++ exception: " << e.what() << std::endl;
+            std::cout << "WebSocket++ exception: " << e.what() << '\n';
         } catch (std::exception const & e) {
-            std::cout << "Standard exception: " << e.what() << std::endl;
+            std::cout << "Standard exception: " << e.what() << '\n';
         }
     }
 
+    std::function<void(double)> callback;
+
+    void setCallback(std::function<void(double)> cb) {
+        callback = cb;
+    }
 private:
+
     void handle_message(const std::string& payload) {
         auto data = json::parse(payload);
-        std::cout << "BTC / USDT last price: " << data["c"] << std::endl;
+
+        if (callback) {
+            double price = std::stod(data["p"].get<std::string>());
+            callback(price);
+        }
     }
+
 };
+
 
 int main() {
     MarketDataFeed feed;
+    Analyzer analyzer;
+
+    // Connect: feed -> analyzer -> your logic
+    feed.setCallback([&analyzer](double price) {
+        analyzer.process_price(price);
+
+        if (analyzer.counter % 100 == 0) {
+            analyzer.print_counter();
+            analyzer.print_stats();
+        }
+    });
+
     feed.connect();
     return 0;
 }
